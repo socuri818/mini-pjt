@@ -1,0 +1,23 @@
+# 비밀 값: 절대 커밋하지 않는다 (public 저장소로 제출)
+.env
+.env.*
+!.env.example
+
+# 가상환경·캐시
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 벡터DB (문서에서 다시 만들 수 있다: python -m src.retriever --rebuild)
+chroma_db/
+
+# 채점 스크립트의 임시 결과 (제출용 round1/round2 리포트는 evaluation/ 바로 아래에 둔다)
+evaluation/results/
+
+# 편집기·OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

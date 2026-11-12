@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>마라톤 훈련 코치</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #667085; --line: #e3e6ec;
+    --accent: #1f6feb; --accent-text: #ffffff; --user: #e8f0fe; --warn-bg: #fff7e0; --warn-text: #7a5b00;
+    --err-bg: #fdecec; --err-text: #9b1c1c; --code-bg: #f1f3f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111419; --panel: #1a1f27; --text: #e7eaf0; --muted: #98a2b3; --line: #2c3340;
+      --accent: #4c8dff; --accent-text: #0b1220; --user: #1f2d46; --warn-bg: #3a3012; --warn-text: #f3d98a;
+      --err-bg: #3b1a1a; --err-text: #f3b4b4; --code-bg: #232a35;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.6 -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+  .app { max-width: 820px; margin: 0 auto; padding: 0 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 20px 0 12px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0; }
+  .notice { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 8px 12px;
+            font-size: 13px; margin-top: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 999px;
+          padding: 6px 12px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .chip:hover { border-color: var(--accent); }
+  #log { flex: 1; padding: 8px 0 16px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 100%; }
+  .msg .who { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .bubble { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+            overflow-wrap: anywhere; }
+  .msg.user .bubble { background: var(--user); border-color: transparent; white-space: pre-wrap; }
+  .msg.error .bubble { background: var(--err-bg); color: var(--err-text); border-color: transparent; }
+  .bubble > :first-child { margin-top: 0; } .bubble > :last-child { margin-bottom: 0; }
+  .bubble table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; display: block; overflow-x: auto; }
+  .bubble th, .bubble td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; white-space: nowrap; }
+  .bubble th { background: var(--code-bg); }
+  .bubble a { color: var(--accent); }
+  .bubble code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  details { margin-top: 8px; font-size: 13px; color: var(--muted); }
+  summary { cursor: pointer; }
+  .step { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; margin: 6px 0; }
+  .step b { color: var(--text); }
+  .step pre { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, Consolas, monospace; }
+  .ctx { margin: 6px 0; }
+  .ctx .src { word-break: break-all; }
+  .typing { color: var(--muted); }
+  .dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+  form { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0 16px; border-top: 1px solid var(--line); }
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  textarea { flex: 1; resize: none; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+             background: var(--panel); color: var(--text); font: inherit; max-height: 140px; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button.send { border: 0; background: var(--accent); color: var(--accent-text); border-radius: 10px; padding: 10px 18px;
+                font: inherit; font-weight: 600; cursor: pointer; }
+  button.send:disabled { opacity: .5; cursor: default; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🏃 풀마라톤 훈련 코치</h1>
+    <p class="sub">풀마라톤 첫 도전자를 위한 부상 예방형 훈련 코치 · 훈련표 · 훈련·부상 예방 질문</p>
+    <div class="notice">러닝 기록은 교육용 더미 데이터입니다. 진단·약 권고는 하지 않으며, 통증이 계속되면 전문의 상담을 받으세요.</div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <main id="log" aria-live="polite"></main>
+
+  <form id="form">
+    <div class="row">
+      <textarea id="q" rows="1" placeholder="질문을 입력하세요. 예: 내 최근 러닝 기록 보고 이번 주 훈련표 짜줘." aria-label="질문"></textarea>
+      <button class="send" id="send" type="submit">보내기</button>
+    </div>
+    <div class="hint">Enter 전송 · Shift+Enter 줄바꿈 · 답변에는 보통 10~20초가 걸립니다.</div>
+  </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+const EXAMPLES = [
+  "내 최근 러닝 기록 보고 이번 주 훈련표 짜줘.",
+  "16주 뒤 첫 풀마라톤이고 목표는 5시간 안에 완주야. 월수금일 가능해. 이번 주 훈련표 짜줘.",
+  "롱런은 풀마라톤 준비에서 왜 중요하고 얼마나 길게 해야 해?",
+  "대회 2주 전부터 훈련량은 어떻게 줄여야 해?",
+  "지난주에 20km 뛰었는데 이번 주는 50km로 짜줘.",
+  "수요일에 폭우가 온대. 이번 주 훈련표 짜줘."
+];
+
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("q");
+const send = document.getElementById("send");
+let busy = false;
+
+// 마크다운 → 안전한 HTML. 라이브러리를 못 불러오면 일반 텍스트로 보여 준다.
+function renderMarkdown(text) {
+  if (window.marked && window.DOMPurify) {
+    const html = DOMPurify.sanitize(marked.parse(text, { breaks: true, gfm: true }), { ADD_ATTR: ["target"] });
+    const box = document.createElement("div");
+    box.innerHTML = html;
+    box.querySelectorAll("a").forEach(a => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
+    return box;
+  }
+  const pre = document.createElement("div");
+  pre.style.whiteSpace = "pre-wrap";
+  pre.textContent = text;
+  return pre;
+}
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function addMessage(kind, who) {
+  const msg = el("div", "msg " + kind);
+  msg.append(el("div", "who", who));
+  const bubble = el("div", "bubble");
+  msg.append(bubble);
+  log.append(msg);
+  msg.scrollIntoView({ block: "end", behavior: "smooth" });
+  return { msg, bubble };
+}
+
+function addDetails(msg, data) {
+  const trace = Array.isArray(data.trace) ? data.trace : [];
+  const contexts = Array.isArray(data.contexts) ? data.contexts : [];
+  if (contexts.length) {
+    const d = el("details");
+    d.append(el("summary", "", `근거 문서 조각 ${contexts.length}건`));
+    contexts.forEach(c => {
+      const item = el("div", "ctx");
+      item.append(el("div", "", (c.text || "").slice(0, 220) + ((c.text || "").length > 220 ? "…" : "")));
+      item.append(el("div", "src", c.source || c.doc_id || ""));
+      d.append(item);
+    });
+    msg.append(d);
+  }
+  if (trace.length) {
+    const d = el("details");
+    d.append(el("summary", "", "처리 과정 (trace) " + trace.map(t => t.step).join(" → ")));
+    trace.forEach(t => {
+      const s = el("div", "step");
+      s.append(el("b", "", t.step));
+      if (t.input) s.append(el("pre", "", "입력: " + t.input));
+      if (t.output) s.append(el("pre", "", "결과: " + t.output));
+      d.append(s);
+    });
+    msg.append(d);
+  }
+}
+
+async function ask(question) {
+  if (busy || !question.trim()) return;
+  busy = true; send.disabled = true;
+  addMessage("user", "나").bubble.textContent = question;
+  const wait = addMessage("assistant", "코치");
+  wait.bubble.innerHTML = '<span class="typing">답변을 만드는 중<span class="dots"></span></span>';
+  try {
+    const res = await fetch("/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `서버 오류 (${res.status})`);
+    }
+    const data = await res.json();
+    wait.bubble.replaceChildren(renderMarkdown(data.answer || "(빈 답변)"));
+    addDetails(wait.msg, data);
+  } catch (e) {
+    wait.msg.className = "msg error";
+    wait.bubble.textContent = "오류: " + e.message + " — 서버가 실행 중인지 확인하고 다시 시도해 주세요.";
+  } finally {
+    busy = false; send.disabled = false; input.focus();
+    wait.msg.scrollIntoView({ block: "end", behavior: "smooth" });
+  }
+}
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const q = input.value;
+  input.value = ""; autoGrow();
+  ask(q);
+});
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+});
+function autoGrow() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 140) + "px"; }
+input.addEventListener("input", autoGrow);
+
+const chips = document.getElementById("chips");
+EXAMPLES.forEach(text => {
+  const b = el("button", "chip", text.length > 26 ? text.slice(0, 26) + "…" : text);
+  b.type = "button"; b.title = text;
+  b.addEventListener("click", () => ask(text));
+  chips.append(b);
+});
+</script>
+</body>
+</html>

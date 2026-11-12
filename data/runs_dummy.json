@@ -1,0 +1,40 @@
+{
+  "_notice": "교육용 더미 데이터입니다. 실제 러너의 기록이 아닙니다.",
+  "runners": [
+    {
+      "runner_id": "R001",
+      "name": "박서준",
+      "runs": [
+        {"days_ago": 1, "distance_km": 6.0, "pace": "6:40"},
+        {"days_ago": 3, "distance_km": 8.0, "pace": "6:30"},
+        {"days_ago": 6, "distance_km": 14.0, "pace": "7:00"},
+        {"days_ago": 8, "distance_km": 6.0, "pace": "6:45"},
+        {"days_ago": 10, "distance_km": 7.0, "pace": "6:35"},
+        {"days_ago": 13, "distance_km": 12.0, "pace": "7:05"},
+        {"days_ago": 15, "distance_km": 5.0, "pace": "6:50"},
+        {"days_ago": 17, "distance_km": 6.0, "pace": "6:40"},
+        {"days_ago": 20, "distance_km": 10.0, "pace": "7:10"},
+        {"days_ago": 22, "distance_km": 5.0, "pace": "6:55"},
+        {"days_ago": 24, "distance_km": 5.0, "pace": "6:45"},
+        {"days_ago": 27, "distance_km": 8.0, "pace": "7:15"}
+      ]
+    },
+    {
+      "runner_id": "R002",
+      "name": "김민수",
+      "runs": [
+        {"days_ago": 2, "distance_km": 10.0, "pace": "5:50"},
+        {"days_ago": 4, "distance_km": 12.0, "pace": "5:45"},
+        {"days_ago": 7, "distance_km": 24.0, "pace": "6:10"},
+        {"days_ago": 9, "distance_km": 10.0, "pace": "5:55"},
+        {"days_ago": 11, "distance_km": 11.0, "pace": "5:50"},
+        {"days_ago": 14, "distance_km": 22.0, "pace": "6:15"}
+      ]
+    },
+    {
+      "runner_id": "R099",
+      "name": "이도윤",
+      "runs": []
+    }
+  ]
+}
