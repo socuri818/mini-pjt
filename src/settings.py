@@ -23,7 +23,8 @@ os.environ["LANGSMITH_PROJECT"] = LANGSMITH_PROJECT
 # 기본값은 평가에 쓴 모델이다. 호출 한도에 걸렸을 때만 환경 변수 BEDROCK_MODEL_ID 로 임시로 바꿔 띄운다.
 MODEL_ID = os.environ.get("BEDROCK_MODEL_ID") or "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
-REGION = "us-east-1"
+# 리전은 기본 us-east-1 이다. 이 리전의 호출 한도가 찼을 때만 환경 변수 BEDROCK_REGION 으로 바꾼다 (모델 ID 는 그대로).
+REGION = os.environ.get("BEDROCK_REGION") or "us-east-1"
 
 # ── 경로 ─────────────────────────────────────────────────────────
 DATA_DIR = PROJECT_ROOT / "data"

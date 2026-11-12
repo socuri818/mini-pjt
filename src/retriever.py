@@ -93,15 +93,33 @@ def build_index(rebuild: bool = False) -> int:
     return len(docs)
 
 
+# 관련도 기준: Chroma 거리(낮을수록 가까움)가 이 값을 넘는 조각은 질문과 무관한 것으로 보고 버린다.
+# 임시 기준: 관련 질문 5건의 상위 결과는 거리 1.18 이하, 무관 질문 5건의 상위 결과는 1.32 이상이어서 그 사이로 정했다.
+# 표본이 적으므로 보고서에 임시 기준이라고 밝힌다. 더 많은 질문으로 다시 정할 수 있다.
+RELEVANCE_MAX_DISTANCE = 1.25
+# 상위 1건은 더 넉넉한 기준을 쓴다. 페이스·테이퍼 질문(#5)의 가장 가까운 문서가 1.25 바로 위에 걸리는 경우가 있었다.
+# 임시 기준이며, 이 값은 #5와 보지 않은 질문 H4의 거리를 보고 정했다(그래서 이후 두 질문은 보지 않은 질문이 아니다).
+TOP_RESULT_MAX_DISTANCE = 1.30
+
+
 def retrieve(query: str, k: int = 3) -> list[dict[str, Any]]:
-    """질문과 가까운 문서 조각 k 개를 [{doc_id, text, source}] 로 돌려준다. 색인이 없으면 빈 목록."""
+    """질문과 가까운 문서 조각을 최대 k 개, [{doc_id, text, source}] 로 돌려준다.
+
+    상위 1건은 TOP_RESULT_MAX_DISTANCE, 나머지는 RELEVANCE_MAX_DISTANCE 를 넘으면 버린다.
+    관련 문서가 없으면 빈 목록. 색인이 없으면 빈 목록.
+    """
     if not settings.CHROMA_DIR.exists():
         return []
     store = _vectorstore()
     with _SEARCH_LOCK:                  # 동시 호출은 한 번에 하나씩 검색한다 (검색은 수백 ms라 지연이 거의 없다)
-        found = store.similarity_search(query, k=k)
-    return [{"doc_id": d.metadata.get("doc_id", ""), "text": d.page_content, "source": d.metadata.get("source", "")}
-            for d in found]
+        found = store.similarity_search_with_score(query, k=k)
+    kept = []
+    for index, (doc, distance) in enumerate(found):
+        limit = TOP_RESULT_MAX_DISTANCE if index == 0 else RELEVANCE_MAX_DISTANCE
+        if distance <= limit:
+            kept.append({"doc_id": doc.metadata.get("doc_id", ""), "text": doc.page_content,
+                         "source": doc.metadata.get("source", "")})
+    return kept
 
 
 @tool
